@@ -1,0 +1,150 @@
+
+---
+title: Sampling from Big Blocks - Karachi East and Kambar
+author: Hammad Ezad
+date: \today
+header-includes:
+  - \usepackage{placeins}
+output: pdf_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::knit_hooks$set(plot = function (x, options) {
+  float_correct <- function(f, y, opts)  {
+    if (is.null(opts$regfloat) || opts$regfloat==FALSE)
+      paste0(f(y, opts), "\n\n\\FloatBarrier\n")
+    else
+      f(y, opts)
+  }
+  if (!is.null(options$out.width) || !is.null(options$out.height) ||
+      !is.null(options$out.extra) || options$fig.align != "default" ||
+      !is.null(options$fig.subcap)) {
+    if (is.null(options$fig.scap))
+      options$fig.scap = NA
+    return(float_correct(knitr:::hook_plot_tex, x, options))
+  }
+  return(float_correct(knitr:::hook_plot_md_base, x, options))
+})
+```
+
+
+
+```{r, warning = FALSE, include = FALSE}
+library(knitr)
+knitr::opts_chunk$set(fig.width=15, fig.height=12, echo = FALSE) 
+library(tidyverse)
+library(lme4)
+library(fixest)
+library(broom)
+library(furrr)
+rm(list=ls())
+library(ggplot2)
+library(dplyr)
+```
+
+
+
+# Karachi East District
+```{r, echo = FALSE, warning=FALSE, message= FALSE}
+
+ke_segments = read_csv("C:/Users/basicuser/Desktop/East_Ucs/Big Blocks KE CSV/ke_big_block.csv")
+zm_data = read_csv("C:/Users/basicuser/Desktop/East_Ucs/Big Blocks KE CSV/zm_data.csv")
+
+ke_segments = ke_segments %>%
+    group_by(uc, town, district) %>% 
+    mutate(segments = n())
+
+new_data = left_join(ke_segments, zm_data, by = c("uc" = "zm_ucs"))
+
+new_data = new_data %>%
+    mutate(pop_per_segment = pop_health/segments.x)
+
+new_data = new_data %>%
+    mutate(blocks = pop_per_segment/(200*5.7))
+
+big_blocks = new_data %>%
+    select(uc, town.x, blocks) %>%
+    group_by(uc, town.x) %>%
+    count()
+
+print(big_blocks, n = 30)
+    
+
+new_data$blocks <- round(new_data$blocks, 0)
+
+segments_data = new_data %>%
+    select(uc, town.x, blocks)
+
+
+write.csv(new_data, "C:/Users/basicuser/Desktop/East_Ucs/Big Blocks KE CSV/new_data.csv")
+
+
+```
+
+
+
+\newpage
+# Final Big Blocks Sample
+
+```{r, warning=FALSE, message= FALSE}
+
+
+set.seed(12235)
+
+grouped_data <- new_data %>% 
+  group_by(uc) %>%  # Assuming 'uc' is the column containing union council information
+  sample_n(1) %>% 
+  select(name, uc, town.x, district.x,  health_ucs,
+         segments.y, pop_health, pop_per_segment, blocks)
+
+big_blocks_sample = grouped_data %>%
+    select(name, uc, town.x,
+          pop_per_segment, blocks)
+
+print(big_blocks_sample, n = 30)
+
+cat("The total number of segments that we would need for our sample according to the 
+Sindh Health Department are", sum(big_blocks_sample$blocks))
+
+```
+
+
+\newpage
+# Kambar District
+
+
+```{r, warning=FALSE, message= FALSE}
+
+
+kam_df = read.csv("C:/Users/basicuser/Desktop/East_Ucs/Kambar UCs/kambar_ucs.csv")
+
+set.seed(12345)
+kambar_sample <- kam_df %>% 
+  sample_n(30) %>% 
+  select(district,zm_ucs,town,pop_health)
+
+kambar_sample
+
+```
+\newpage
+
+
+```{r, warning=FALSE, message= FALSE}
+
+kam_df %>%
+    group_by(district, town) %>% 
+    count()
+
+ggplot(kambar_sample, aes(x = town)) + 
+    geom_histogram(stat = "count", color = 'white', fill = '#34496d') +
+    labs(subtitle="Town-wise division of sample",
+             title="Kambar District",
+                     y="Count", x="Town") + 
+    theme(axis.text.x = element_text(size = 15), axis.title.y = element_text(size = 20), axis.text.y = element_text(size = 15), axis.title.x = element_text(size = 20), plot.title = element_text(size = 30), plot.subtitle = element_text(size = 20))
+
+```
+
+
+```
