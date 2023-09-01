@@ -61,7 +61,7 @@ print(str_data$lang_int)
 variable_rename_map <- c(
 	"hh_head" = "A7",
 	"num_ch_under_3" = "A9",
-	"num_cou_under_3" = "A9a"
+	"num_cou_under_3" = "A9a" 
 )
 hh_data <- hh_data %>%
   rename(!!!variable_rename_map)
@@ -73,7 +73,17 @@ hh_data$str_key = substr(hh_data$KEY, 1, 41)
 
 # Rename the variables in the Couple Data Frame 
 variable_rename_map <- c(
-  "num_ch_cp_under_3" = "A9b"
+    "num_ch_cp_under_3" = "A9b",
+    "child_father" = "A11",
+    "child_mother" = "A12",
+    "ph_no" = "A13",
+    "repeat_no" = "A14",
+    "correct_no" = "A14a",
+    "contact_yes" = "A15",
+    "new_no" = "A16",
+    "num_belong" = "A17",
+    "repeat_no_again" = "A18",
+    "no_correct" = "A19"
 )
 cp_data <- cp_data %>%
   rename(!!!variable_rename_map)
@@ -84,17 +94,7 @@ cp_data$str_key = substr(cp_data$KEY, 1, 41)
 # Rename the variables in the Children Data Frame 
 variable_rename_map <- c(
   "child_name" = "A10",
-  "gender" = "A10a",
-  "child_father" = "A11",
-  "child_mother" = "A12",
-  "ph_no" = "A13",
-  "repeat_no" = "A14",
-  "correct_no" = "A14a",
-  "contact_yes" = "A15",
-  "new_no" = "A16",
-  "num_belong" = "A17",
-  "repeat_no_again" = "A18",
-  "no_correct" = "A19"
+  "gender" = "A10a"
 )
 ch_data <- ch_data %>%
   rename(!!!variable_rename_map)
