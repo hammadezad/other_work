@@ -3,20 +3,26 @@ library(tidyverse)
 library(reshape2)
 library(splitstackshape)
 
-str_data = read.csv("C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/listing_survey_7.csv")
-hh_data = read.csv("C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/listing_survey_7-repeat_households.csv")
-cp_data = read.csv("C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/listing_survey_7-repeat_couple.csv") 
-ch_data = read.csv("C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/listing_survey_7-repeat_children.csv")
+setwd("C:/Users/basicuser/Desktop/surveys/Listing Survey/Data")
+structure_data = read.csv("listing_survey_9.csv")
+household_data = read.csv("listing_survey_9-repeat_households.csv")
+couple_data = read.csv("listing_survey_9-repeat_couple.csv") 
+child_data = read.csv("listing_survey_9-repeat_children.csv")
+
+
+cat("No of structures in the dataset are", dim(structure_data)[1])
+cat("No of households in the dataset are", dim(household_data)[1])
+cat("No of couples in the dataset are", dim(couple_data)[1])
+cat("No of children in the dataset are", dim(child_data)[1])
 
 
 
+#cat("No of structures in the dataset are", dim(str_data)[1])
+#cat("No of households in the dataset are", dim(hh_data)[1])
+#cat("No of couples in the dataset are", dim(cp_data)[1])
+#cat("No of children in the dataset are", dim(ch_data)[1])
 
-cat("No of structures in the dataset are", dim(str_data)[1])
-cat("No of households in the dataset are", dim(hh_data)[1])
-cat("No of couples in the dataset are", dim(cp_data)[1])
-cat("No of children in the dataset are", dim(ch_data)[1])
 
-str_data$str_key = str_data$PARENT_KEY
 
 # Rename the variables in the Structure Data Frame 
 
@@ -36,9 +42,25 @@ variable_rename_map <- c(
   "interview_status" = "A20",
   "resch_date" = "A20a"
 )
-str_data <- str_data %>%
+structure_data <- structure_data %>%
   rename(!!!variable_rename_map)
 
+colnames(structure_data)
+
+
+
+str_data <- structure_data[, c("today",
+    "structure_id",
+    "id_number" ,
+    "residence_binary",
+    "outcome_visit",
+    "lang_int", 
+    "dwel_head", 
+    "num_hh_under_3", 
+    "num_str_under_3", 
+    "KEY")]
+#colnames(structure_data)
+#colnames(str_data)
 
 languages <- c(
   "English",
@@ -54,19 +76,36 @@ languages <- c(
 
 str_data$lang_int <- factor(str_data$lang_int, levels = 1:9, labels = languages)
 
-# Display the updated data frame
-print(str_data$lang_int)
+
+
+
 
 # Rename the variables in the Household Data Frame 
+
+
+
+colnames(household_data)
 variable_rename_map <- c(
 	"hh_head" = "A7",
 	"num_ch_under_3" = "A9",
 	"num_cou_under_3" = "A9a"
 )
-hh_data <- hh_data %>%
+household_data <- household_data %>%
   rename(!!!variable_rename_map)
 
-hh_data$str_key = substr(hh_data$KEY, 1, 41)
+hh_data <- household_data[,c( "hh_no","hh_head" ,"num_cou_under_3" , "PARENT_KEY", "KEY")]
+
+
+dim(hh_data)
+
+hh_data <- hh_data %>%
+  group_by(PARENT_KEY) %>%
+  mutate(hh_num = row_number()) %>%
+  ungroup() %>%
+  group_by(PARENT_KEY) %>%
+  mutate(hh_nos = max(hh_num))
+
+print(hh_data, n = 50)
 
 
 
@@ -105,43 +144,58 @@ ch_data <- ch_data %>%
 
 ch_data$str_key = substr(ch_data$KEY, 1, 41)
 
+write.csv(str_data, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/simple_data/str_data.csv")
+write.csv(hh_data, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/simple_data/hh_data.csv")
+write.csv(cp_data, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/simple_data/cp_data.csv")
+write.csv(ch_data, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/simple_data/ch_data.csv")
+
+
 ################################################################################
 #############################  Working on the hh data ##########################
 ################################################################################
+library(dplyr)
+library(tidyr)
 
-grouped_hh_data <- hh_data %>%
-  group_by(str_key) %>%
-  mutate(index = row_number())
+# Assuming you've already grouped your data and added the 'index' column
+
+# Add a unique identifier for each row
+grouped_hh_data <- grouped_hh_data %>%
+  group_by(index) %>%
+  mutate(row_id = row_number())
 
 # Pivot the data from long to wide format with numeric suffixes
-hh_wide_data <- grouped_hh_data %>%
+hh_wide_data_1 <- grouped_hh_data %>%
   pivot_wider(
+    id_cols = c("PARENT_KEY", "row_id"),
     names_from = index,
-    values_from = c(instructions_1, hh_no, HH_ID, hh_head, num_ch_under_3, num_cou_under_3, repeat_couple_count, PARENT_KEY,KEY),
+    values_from = c(
+      instructions_1,
+      hh_no,
+      new_hh_no,
+      HH_ID,
+      hh_head,
+      num_ch_under_3,
+      num_cou_under_3,
+      repeat_couple_count
+    ),
     names_sep = "_"
   )
 
-hh_wide_data <- hh_wide_data %>%
+# Remove the row_id column (optional)
+hh_wide_data_1 <- hh_wide_data_1 %>%
+  select(-row_id)
+
+# Reorder columns
+hh_wide_data_1 <- hh_wide_data_1 %>%
   select(
     order(
       as.numeric(gsub(".*_", "", colnames(.))),
       everything()
     )
   )
-# Remove grouping
-hh_wide_data <- hh_wide_data %>%
-  ungroup()
 
-# Display the wide data
-print(hh_wide_data)
-
-write.csv(hh_wide_data, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/8-21-2023/structure_data/hh_wide_data.csv")
-
-
-#str_hh <- left_join(str_data, hh_wide_data, by = c("KEY" = "PARENT_KEY"))
-
-
-#write.csv(str_hh, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/8-21-2023/derived_data/str_hh.csv")
+# Write the wide data to a CSV file
+write.csv(hh_wide_data_1, "C:/Users/basicuser/Desktop/Household Survey Prep/Listing Survey/Data/9-5-2023/wide_data/hh_wide_data_1.csv")
 
 
 
@@ -150,7 +204,7 @@ write.csv(hh_wide_data, "C:/Users/basicuser/Desktop/Household Survey Prep/Listin
 ################################################################################
 
 grouped_cp_data <- cp_data %>%
-  group_by(str_key) %>%
+  group_by(PARENT_KEY) %>%
   mutate(index = row_number())
 
 # Pivot the data from long to wide format with numeric suffixes

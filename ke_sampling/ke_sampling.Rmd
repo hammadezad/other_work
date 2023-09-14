@@ -62,7 +62,7 @@ new_data = new_data %>%
     mutate(pop_per_segment = pop_health/segments.x)
 
 new_data = new_data %>%
-    mutate(blocks = pop_per_segment/(200*5.7))
+    mutate(blocks = pop_per_segment/(300*5.7))
 
 big_blocks = new_data %>%
     select(uc, town.x, blocks) %>%
@@ -86,15 +86,15 @@ write.csv(new_data, "C:/Users/basicuser/Desktop/East_Ucs/Big Blocks KE CSV/new_d
 
 
 \newpage
-# Final Big Blocks Sample
+# Big Blocks Sample
 
-```{r, warning=FALSE, message= FALSE}
+```{r, echo = FALSE, warning=FALSE, message= FALSE}
 
 
 set.seed(12235)
 
 grouped_data <- new_data %>% 
-  group_by(uc) %>%  # Assuming 'uc' is the column containing union council information
+  group_by(uc) %>%  
   sample_n(1) %>% 
   select(name, uc, town.x, district.x,  health_ucs,
          segments.y, pop_health, pop_per_segment, blocks)
@@ -104,11 +104,73 @@ big_blocks_sample = grouped_data %>%
           pop_per_segment, blocks)
 
 print(big_blocks_sample, n = 30)
+write.csv(big_blocks_sample, "C:/Users/basicuser/Desktop/East_Ucs/Big Blocks KE CSV/big_blocks_sample.csv")
+
 
 cat("The total number of segments that we would need for our sample according to the 
 Sindh Health Department are", sum(big_blocks_sample$blocks))
 
 ```
+\newpage
+# Big Blocks Division
+
+```{r, echo = FALSE, warning=FALSE, message= FALSE}
+
+
+blocks_data = read_csv("C:/Users/basicuser/Desktop/East_Ucs/KE Blocks/final_blocks.csv")
+
+groups= blocks_data %>% 
+  group_by(uc) %>% 
+  count()
+
+print(groups, n = 30)
+
+
+
+```
+\newpage
+# Final Blocks Selection
+```{r, echo = FALSE, warning=FALSE, message= FALSE}
+
+set.seed(14587)
+sampled_data <- blocks_data %>% 
+  group_by(uc) %>%  
+  sample_n(1) %>% 
+  select(Name, uc, town,  district)
+
+print(sampled_data, n = 30)
+
+write.csv(sampled_data, "C:/Users/basicuser/Desktop/East_Ucs/KE Blocks/sampled_blocks.csv")
+
+
+
+```
+
+\newpage
+# Final Blocks Selection
+```{r, echo = FALSE, warning=FALSE, message= FALSE}
+
+segments_data = read_csv("C:/Users/basicuser/Desktop/East_Ucs/Segements/SEGMENT/csv.csv")
+
+groups = segments_data %>% 
+  group_by(uc) %>% 
+  count()
+
+
+
+set.seed(14587)
+final_sampled_data <- segments_data %>% 
+  group_by(uc) %>%  
+  sample_n(1) %>% 
+  select(name, uc, town,  district)
+
+print(final_sampled_data, n = 30)
+
+write.csv(final_sampled_data, "C:/Users/basicuser/Desktop/East_Ucs/KE Blocks/final_sampled_blocks.csv")
+
+
+```
+
 
 
 \newpage
